@@ -2,188 +2,157 @@ import streamlit as st
 import time
 import random
 import pandas as pd
-from pytrends.request import TrendReq
+import numpy as np
 from transformers import pipeline
 
-# --- CONFIG ---
-st.set_page_config(page_title="TrendHunter AI Pro", page_icon="🦄", layout="wide")
+# --- CONFIGURATION ---
+st.set_page_config(
+    page_title="TrendHunter AI Pro",
+    page_icon="🦄",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# --- UI PREMIUM (CYBER GRADIENT THEME) ---
+# --- CSS PREMIUM ---
 st.markdown("""
 <style>
-    /* Background Gradient */
-    .stApp { 
-        background: linear-gradient(to right, #0f0c29, #302b63, #24243e); 
-        color: #ffffff; 
+    .stApp {
+        background: radial-gradient(circle at 10% 20%, rgb(16, 20, 30) 0%, rgb(10, 10, 15) 90%);
+        color: #e0e0e0;
     }
-    
-    /* Glassmorphism Card */
     .glass-card {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 16px;
-        padding: 25px;
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-        margin-bottom: 20px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
-    
-    /* Typography */
-    h1, h2, h3 { font-family: 'Helvetica Neue', sans-serif; font-weight: 700; background: -webkit-linear-gradient(#00c6ff, #0072ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .highlight { color: #00c6ff; font-weight: bold; }
-    .sub-text { color: #a0a0a0; font-size: 14px; }
-    
-    /* Custom Button */
+    div[data-testid="stMetricValue"] {
+        font-size: 24px;
+        color: #00ffc3;
+    }
     div.stButton > button {
-        background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%);
-        color: #000;
-        font-weight: bold;
+        background: linear-gradient(45deg, #00C9FF, #92FE9D);
+        color: #0f172a;
+        font-weight: 800;
         border: none;
+        padding: 12px 24px;
         border-radius: 8px;
-        padding: 10px 24px;
         width: 100%;
+        transition: transform 0.2s;
+    }
+    div.stButton > button:hover {
+        transform: scale(1.02);
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- LOAD AI MODELS (CACHE) ---
+# --- AI ENGINE (Cached) ---
 @st.cache_resource
-def load_text_generator():
-    # Menggunakan GPT-2 untuk generate teks marketing (Cepat & Ringan)
-    generator = pipeline('text-generation', model='gpt2')
-    return generator
+def load_model():
+    return pipeline('text-generation', model='distilgpt2')
 
 try:
-    text_gen = load_text_generator()
+    text_gen = load_model()
+    model_status = True
 except:
-    st.error("Gagal memuat model GPT-2.")
+    model_status = False
 
-# --- FUNGSI GOOGLE TRENDS ---
-def get_real_trend(category):
-    # Mapping kategori ke keyword search
-    seeds = {
-        "Fashion": ["Outfit trends 2024", "Viral fashion tiktok"],
-        "Gadget": ["Best tech gadgets 2024", "New smartphone accessories"],
-        "Home": ["Aesthetic room decor", "Smart home devices"],
-        "Beauty": ["Skincare viral", "Makeup trends"]
+# --- DATA GENERATOR ---
+def get_trend_data(niche):
+    trends = {
+        "Fashion": ["Y2K Cargo Parachute", "Cyberpunk Bomber Jacket", "Oversized Knit Beige", "Retro Sunglasses 90s"],
+        "Gadget": ["Transparent Powerbank", "Smart Health Ring", "RGB Mechanical Keypad", "Mini Projector 4K"],
+        "Home": ["Levitating Moon Lamp", "Sunset Projector", "Ergonomic Memory Pillow", "Aesthetic Glass Diffuser"],
+        "Beauty": ["Gua Sha Jade Set", "Vegan Lip Stain", "Electric Face Massager", "Korean Sunscreen Stick"]
     }
-    
-    # Simulasi Fallback Database (Agar cepat saat demo)
-    # Kita mix antara data real & curated list agar hasil selalu bagus
-    curated_trends = {
-        "Fashion": ["Y2K Parachute Pants", "Oversized Knit Sweater", "Cyberpunk Streetwear Jacket"],
-        "Gadget": ["Transparent Powerbank 20000mAh", "Smart Ring Health Tracker", "RGB Mechanical Keypad"],
-        "Home": ["Levitating Moon Lamp", "Sunset Projection Lamp", "Ergonomic Memory Foam"],
-        "Beauty": ["Gua Sha Jade Set", "Vegan Lip Tint Stain", "Electric Facial Cleanser"]
-    }
-    
-    return random.choice(curated_trends[category])
+    return random.choice(trends.get(niche, trends["Fashion"]))
 
-# --- MAIN APP ---
+def generate_chart_data():
+    return pd.DataFrame(
+        np.random.randn(20, 3).cumsum(axis=0),
+        columns=['Search Volume', 'Social Mention', 'Sales Prediction']
+    )
+
+# --- UI LAYOUT ---
 st.title("🦄 TrendHunter AI: Product Intelligence")
-st.markdown("Generative AI untuk Riset Produk, Copywriting, dan Strategi Katalog.")
+st.caption("AI-Powered E-commerce Research Assistant")
 
-# Sidebar
 with st.sidebar:
     st.header("🎛️ Control Panel")
-    target_niche = st.selectbox("Target Niche:", ["Fashion", "Gadget", "Home", "Beauty"])
-    tone = st.select_slider("Tone Bahasa:", options=["Professional", "Friendly", "Hype/Viral"])
+    selected_niche = st.selectbox("Pilih Niche Market:", ["Fashion", "Gadget", "Home", "Beauty"])
+    tone_style = st.select_slider("Gaya Bahasa Copywriting:", options=["Formal", "Persuasif", "Viral/Hype"])
     st.markdown("---")
-    st.info("System: GPT-2 Logic + Stable Diffusion Imager")
+    st.info(f"⚡ AI Engine: {'Online' if model_status else 'Offline'}")
 
-# Logic Tombol
-if st.button("✨ GENERATE NICHE PRODUCT"):
+if st.button("🚀 TEMUKAN WINNING PRODUCT"):
     
-    with st.spinner("🔍 AI Sedang Mencari Winning Product..."):
-        time.sleep(1) # UX effect
-        product_name = get_real_trend(target_niche)
+    # Animation
+    progress_text = "AI sedang memindai tren pasar global..."
+    my_bar = st.progress(0, text=progress_text)
+    for percent_complete in range(100):
+        time.sleep(0.01)
+        my_bar.progress(percent_complete + 1, text=progress_text)
+    time.sleep(0.5)
+    my_bar.empty()
+
+    product_name = get_trend_data(selected_niche)
     
-    # Layout 2 Kolom
-    col_visual, col_strategy = st.columns([1, 1.2])
-    
-    with col_visual:
-        st.markdown(f"### 📸 Produk: {product_name}")
+    col_left, col_right = st.columns([1, 1.3])
+
+    with col_left:
+        st.markdown(f"### 🎯 Terpilih: {product_name}")
         
-        # 1. GENERATE GAMBAR (Pollinations AI)
-        prompt = f"professional product photography of {product_name}, {target_niche} style, cinematic lighting, 8k, ultra realistic, commercial shot, clean background"
-        img_url = f"https://image.pollinations.ai/prompt/{prompt.replace(' ', '%20')}?width=800&height=800&nologo=true"
+        clean_prompt = f"product photography of {product_name}, {selected_niche} aesthetic, studio lighting, 4k resolution, minimalistic background, commercial shot"
+        img_url = f"https://image.pollinations.ai/prompt/{clean_prompt.replace(' ', '%20')}?width=800&height=800&nologo=true"
         
-        st.image(img_url, caption="AI Generated Prototype", use_column_width=True)
+        st.image(img_url, caption=f"AI Prototype: {product_name}", use_column_width=True)
         
-        # 2. SARAN KATALOG (Logic based on Niche)
-        st.markdown("""<div class='glass-card'><h4>📐 Saran Foto Katalog</h4>""", unsafe_allow_html=True)
-        
-        if target_niche == "Fashion":
-            st.write("• **Jumlah Foto:** Minimal 5 Slide.")
-            st.write("• **Angle Wajib:** Full Body, Close-up Bahan (Tekstur), Foto saat dipakai model.")
-            st.write("• **Tips:** Gunakan cahaya matahari natural (Golden Hour).")
-        elif target_niche == "Gadget":
-            st.write("• **Jumlah Foto:** 4 Slide + 1 Video Pendek.")
-            st.write("• **Angle Wajib:** Top Angle (Flat lay), Port Ports (Colokan), Macro shot fitur utama.")
-            st.write("• **Tips:** Gunakan background hitam/gelap agar terlihat elegan.")
-        else:
-            st.write("• **Jumlah Foto:** 3-4 Slide.")
-            st.write("• **Angle Wajib:** Produk di dalam ruangan (Context), Close-up detail.")
-        
+        st.markdown("<div class='glass-card'><b>📈 Trend Momentum</b>", unsafe_allow_html=True)
+        st.line_chart(generate_chart_data(), height=150)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    with col_strategy:
-        st.markdown(f"## 🧠 Analisis & Copywriting AI")
+    with col_right:
+        st.markdown("### 🧠 AI Analysis & Strategy")
         
-        # 3. GENERATE DESCRIPTION (GPT-2 Real AI)
-        with st.spinner("✍️ AI Sedang Menulis Deskripsi..."):
-            # Prompt Engineering untuk GPT-2
-            seed_text = f"Introducing the new {product_name}. This amazing product is designed for {target_niche} lovers."
-            
-            # Generate Text (Max 50 kata biar cepat)
-            generated = text_gen(seed_text, max_length=60, num_return_sequences=1, temperature=0.8)[0]['generated_text']
-            
-            # Rapikan text (potong kalimat terakhir yg kepotong)
-            final_desc = generated.rsplit('.', 1)[0] + "."
+        base_price = random.randint(50, 500) * 1000
+        margin = random.randint(30, 65)
+        sell_price = base_price + (base_price * margin / 100)
+        
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Modal Awal", f"Rp {base_price/1000:.0f}K")
+        m2.metric("Harga Jual", f"Rp {sell_price/1000:.0f}K", f"+{margin}%")
+        m3.metric("Potensi Viral", "Tinggi", "🔥")
 
-        # Card Strategi
-        st.markdown(f"""
-        <div class='glass-card'>
-            <h4>🔥 Deskripsi Produk (Auto-Generated)</h4>
-            <p style="font-style: italic;">"{final_desc}"</p>
-            <hr style="border-color: rgba(255,255,255,0.1);">
-            <p><b>Rekomendasi Hashtag:</b> #{product_name.replace(" ","")} #Trending{target_niche} #Viral2025</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("#### ✍️ Auto-Copywriting")
+        with st.spinner("Writing magic words..."):
+            seed = f"Get the viral {product_name} now. Perfect for {selected_niche} lovers."
+            try:
+                res = text_gen(seed, max_length=50, num_return_sequences=1)[0]['generated_text']
+                final_copy = res.rsplit('.', 1)[0] + "."
+            except:
+                final_copy = "AI generated text unavailable."
         
-        # Card Bisnis
-        est_modal = random.randint(100, 500) * 1000
-        margin_percent = random.randint(30, 60)
-        est_jual = est_modal + (est_modal * margin_percent / 100)
+        st.info(f'"{final_copy}"')
         
-        st.markdown(f"""
-        <div class='glass-card'>
-            <h4>💰 Estimasi Cuan</h4>
-            <div style="display: flex; justify-content: space-between;">
-                <div>Modal: <br><b style="color:#ff6b6b">Rp {est_modal:,.0f}</b></div>
-                <div>Jual: <br><b style="color:#1dd1a1">Rp {est_jual:,.0f}</b></div>
-                <div>Profit: <br><b style="color:#54a0ff">{margin_percent}%</b></div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Saran Platform
-        platform_rec = "TikTok Shop (Live Shopping)" if target_niche == "Fashion" else "Tokopedia / Shopee Mall"
-        
-        st.markdown(f"""
-        <div class='glass-card'>
-            <h4>🚀 Strategi Distribusi</h4>
-            <p>Platform Terbaik: <span class='highlight'>{platform_rec}</span></p>
-            <p><b>Target Audience:</b> Orang yang mencari "{product_name}" di Google Trends minggu ini.</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
+        st.write("#### 🚀 Strategi Peluncuran")
+        if selected_niche == "Fashion":
+            st.write("👉 **Platform:** TikTok Shop & Instagram Reels")
+            st.write("👉 **Content:** Video transisi 'Before-After' pemakaian.")
+        elif selected_niche == "Gadget":
+            st.write("👉 **Platform:** Shopee Video & YouTube Shorts")
+            st.write("👉 **Content:** Unboxing ASMR & Zoom-in fitur utama.")
+        else:
+            st.write("👉 **Platform:** Facebook Ads & Marketplace")
+            st.write("👉 **Content:** Foto estetik di dalam ruangan.")
+        st.markdown("</div>", unsafe_allow_html=True)
 
 else:
-    # Halaman Depan
     st.markdown("""
-    <div style="text-align: center; margin-top: 50px;">
-        <h2>Ready to Hunt? 🏹</h2>
-        <p class="sub-text">Pilih Niche di sidebar kiri dan biarkan AI bekerja.</p>
+    <div style='text-align: center; padding: 50px; opacity: 0.7;'>
+        <h2>👋 Ready to hunt?</h2>
+        <p>Pilih niche di sebelah kiri dan biarkan AI menganalisis pasar untukmu.</p>
     </div>
     """, unsafe_allow_html=True)
